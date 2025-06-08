@@ -18,17 +18,31 @@
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Absensi Wajah</a>
-            <div class="collapse navbar-collapse">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Absensi Wajah</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a href="/register" class="nav-link">Daftar Wajah</a></li>
-                    <li class="nav-item"><a href="/absen" class="nav-link active">Absensi</a></li>
+                    <li class="nav-item">
+                        <a href="/register" class="nav-link {{ request()->is('register') ? 'active' : '' }}">
+                            <i class="bi bi-person-plus-fill me-1"></i> Daftar Wajah
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/absen" class="nav-link {{ request()->is('absen') ? 'active' : '' }}">
+                            <i class="bi bi-clipboard-check-fill me-1"></i> Absensi
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+
 
     <div class="container py-4">
         <!-- Heading -->
