@@ -12,6 +12,22 @@
             height: auto;
             border-radius: 10px;
         }
+
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 0.25rem;
+        }
+
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 
