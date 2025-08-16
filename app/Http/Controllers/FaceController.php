@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
-
+use Illuminate\Support\Facades\Hash;
 
 class FaceController extends Controller
 {
@@ -21,6 +22,8 @@ class FaceController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
+            'username' => 'required|string|unique:users,username',
+            'password' => 'required|string|min:6',
             'image_0' => 'required',
             'image_1' => 'required',
             'image_2' => 'required',
@@ -36,7 +39,15 @@ class FaceController extends Controller
 
         DB::table('users')->updateOrInsert(
             ['face_label' => $label],
-            ['name' => $request->name, 'face_label' => $label]
+            [
+                'name' => $request->name,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'role' => 2, // role siswa
+                'face_label' => $label,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
         );
 
         foreach (['image_0', 'image_1', 'image_2'] as $index => $key) {
@@ -58,16 +69,22 @@ class FaceController extends Controller
     }
 
 
-    public function absenForm()
+    public function absenForm(Subject $subject)
     {
-        $absensi = Attendance::all();
-        return view('absen')->with('absensi', $absensi);
+        $absensi = Attendance::where('subject_id', $subject->id)
+            ->whereDate('created_at', today())
+            ->with('user')
+            ->get();
+        $subject = $subject->where('id', $subject->id)->first();
+        $users = DB::table('users')->get(); // Fetch all users for the view
+        return view('absen')->with(compact('absensi', 'subject', 'users'));
     }
 
     public function absen(Request $request)
     {
         $request->validate([
             'captured' => 'required|string',
+            'subject' => 'required',
         ]);
 
         // Decode base64 image
@@ -101,12 +118,23 @@ class FaceController extends Controller
                 $already = DB::table('attendances')
                     ->whereDate('created_at', now()->toDateString())
                     ->where('user_id', $userId)
+                    ->where('subject_id', $request->subject)
                     ->exists();
 
                 if (!$already) {
+                    $subject = Subject::find($request->subject);
+                    if ($subject) {
+                        $startTime = \Carbon\Carbon::parse($subject->start_time);
+                    } else {
+                        return back()->withErrors('Subject tidak ditemukan');
+                    }
+                    $now = now();
+                    $status = $now->lessThanOrEqualTo($startTime) ? 'hadir' : 'terlambat';
                     DB::table('attendances')->insert([
                         'user_id' => $userId,
                         'absen_at' => now(),
+                        'subject_id' => $subject->id,
+                        'status'     => $status,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);

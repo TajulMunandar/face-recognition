@@ -56,15 +56,33 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    @if (auth()->user()->role == 1)
+                        <li class="nav-item">
+                            <a href="/register" class="nav-link {{ request()->is('register') ? 'active' : '' }}">
+                                <i class="bi bi-person-plus-fill me-1"></i> Daftar Wajah
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
-                        <a href="/register" class="nav-link {{ request()->is('register') ? 'active' : '' }}">
-                            <i class="bi bi-person-plus-fill me-1"></i> Daftar Wajah
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/absen" class="nav-link {{ request()->is('absen') ? 'active' : '' }}">
+                        <a href="/" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
                             <i class="bi bi-clipboard-check-fill me-1"></i> Absensi
                         </a>
+                    </li>
+                    @if (auth()->user()->role == 1)
+                        <li class="nav-item">
+                            <a href="{{ route('subjects.index') }}"
+                                class="nav-link {{ request()->is('subjects') ? 'active' : '' }}">
+                                <i class="bi bi-journal-text me-1"></i> Mata Pelajaran
+                            </a>
+                        </li>
+                    @endif
+                    <li class="nav-item">
+                        <form action="/logout" method="POST">
+                            @csrf
+                            <button type="submit" class="nav-link">
+                                <i class="bi bi-box-arrow-right me-1"></i> Keluar
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>
@@ -98,6 +116,16 @@
                                 <button id="captureBtn" type="button" class="btn btn-outline-primary w-100 mb-3"
                                     onclick="captureImage()">Ambil Gambar</button>
                                 <div id="captured-images" class="row g-2"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" required>
                             </div>
 
                             <!-- Hidden Inputs for base64 Images -->

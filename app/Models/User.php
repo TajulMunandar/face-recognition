@@ -17,9 +17,8 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'face_label',
+    protected $guarded = [
+        'id',
     ];
 
     public function attendances()

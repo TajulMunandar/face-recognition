@@ -10,10 +10,14 @@ class Attendance extends Model
     /** @use HasFactory<\Database\Factories\AttendaceFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'absen_at',
+    protected $guarded = [
+        'id',
     ];
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
 
     public function user()
     {

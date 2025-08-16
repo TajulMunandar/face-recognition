@@ -44,15 +44,33 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    @if (auth()->user()->role == 1)
+                        <li class="nav-item">
+                            <a href="/register" class="nav-link {{ request()->is('register') ? 'active' : '' }}">
+                                <i class="bi bi-person-plus-fill me-1"></i> Daftar Wajah
+                            </a>
+                        </li>
+                    @endif
                     <li class="nav-item">
-                        <a href="/register" class="nav-link {{ request()->is('register') ? 'active' : '' }}">
-                            <i class="bi bi-person-plus-fill me-1"></i> Daftar Wajah
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/absen" class="nav-link {{ request()->is('absen') ? 'active' : '' }}">
+                        <a href="/" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
                             <i class="bi bi-clipboard-check-fill me-1"></i> Absensi
                         </a>
+                    </li>
+                    @if (auth()->user()->role == 1)
+                        <li class="nav-item">
+                            <a href="{{ route('subjects.index') }}"
+                                class="nav-link {{ request()->is('subjects') ? 'active' : '' }}">
+                                <i class="bi bi-journal-text me-1"></i> Mata Pelajaran
+                            </a>
+                        </li>
+                    @endif
+                    <li class="nav-item">
+                        <form action="/logout" method="POST">
+                            @csrf
+                            <button type="submit" class="nav-link">
+                                <i class="bi bi-box-arrow-right me-1"></i> Keluar
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>
@@ -64,12 +82,20 @@
         <!-- Heading -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold text-primary">
-                <i class="bi bi-clipboard-check-fill me-2"></i>Daftar Absensi Hari Ini
+                <i class="bi bi-clipboard-check-fill me-2"></i>Daftar Absensi Hari Ini MP:{{ $subject->name }}
             </h4>
-            <button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal"
-                data-bs-target="#absenModal">
-                <i class="bi bi-person-check-fill me-1"></i>Absen Sekarang
-            </button>
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-success shadow-sm me-2" data-bs-toggle="modal"
+                        data-bs-target="#absenModal">
+                        <i class="bi bi-person-check-fill me-1"></i>Absen Sekarang
+                    </button>
+                    <button type="button" class="btn btn-warning shadow-sm" data-bs-toggle="modal"
+                        data-bs-target="#statusModal">
+                        <i class="bi bi-person-check-fill me-1"></i>Update Status
+                    </button>
+                </div>
+            </div>
         </div>
 
         @if (session('success'))
@@ -94,6 +120,7 @@
                         <th scope="col">#</th>
                         <th scope="col">Nama</th>
                         <th scope="col">Waktu Absen</th>
+                        <th scope="col">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -109,69 +136,137 @@
                                     <span class="text-muted">Belum Absen</span>
                                 @endif
                             </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="text-center text-muted">Belum ada data absensi hari ini.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+                            <td>
+                                @switch($a->status)
+                                    @case('hadir')
+                                        <span class="badge bg-success">Hadir</span>
+                                    @break
 
-    <!-- Modal Absensi -->
-    <div class="modal fade" id="absenModal" tabindex="-1" aria-labelledby="absenModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content shadow">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="absenModalLabel"><i class="bi bi-camera-fill me-1"></i> Ambil Wajah
-                        untuk Absen</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <video id="camera" class="rounded shadow-sm border" autoplay playsinline
-                        style="width: 100%; max-height: 400px;"></video>
-                    <form action="/absen" method="POST" class="mt-3">
-                        @csrf
-                        <input type="hidden" name="captured" id="captured">
-                        <button type="button" class="btn btn-primary w-100" onclick="captureAndSubmit()">
-                            <i class="bi bi-check-circle-fill me-1"></i>Konfirmasi Absen
-                        </button>
-                    </form>
+                                    @case('terlambat')
+                                        <span class="badge bg-warning text-dark">Terlambat</span>
+                                    @break
+
+                                    @case('izin')
+                                        <span class="badge bg-info text-dark">Izin</span>
+                                    @break
+
+                                    @case('sakit')
+                                        <span class="badge bg-primary">Sakit</span>
+                                    @break
+
+                                    @case('alfa')
+                                        <span class="badge bg-danger">Alfa</span>
+                                    @break
+                                @endswitch
+                            </td>
+                        </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Belum ada data absensi hari ini.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Absensi -->
+        <div class="modal fade" id="absenModal" tabindex="-1" aria-labelledby="absenModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="absenModalLabel"><i class="bi bi-camera-fill me-1"></i> Ambil Wajah
+                            untuk Absen</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <video id="camera" class="rounded shadow-sm border" autoplay playsinline
+                            style="width: 100%; max-height: 400px;"></video>
+                        <form action="/absen" method="POST" class="mt-3">
+                            @csrf
+                            <input type="hidden" name="captured" id="captured">
+                            <input type="hidden" name="subject" value="{{ $subject->id }}">
+                            <button type="button" class="btn btn-primary w-100" onclick="captureAndSubmit()">
+                                <i class="bi bi-check-circle-fill me-1"></i>Konfirmasi Absen
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Modal Update Status -->
+        <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-md modal-dialog-centered">
+                <div class="modal-content shadow">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title" id="statusModalLabel"><i class="bi bi-clipboard-check me-1"></i> Ubah
+                            Status Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="{{ route('absen.updateStatus') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+
+                            <div class="mb-3">
+                                <label for="user_id" class="form-label">Pilih Siswa</label>
+                                <select name="user_id" id="user_id" class="form-select" required>
+                                    <option value="">-- Pilih Siswa --</option>
+                                    @foreach ($users as $u)
+                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Pilih Status</label>
+                                <select name="status" class="form-select" required>
+                                    <option value="">-- Pilih Status --</option>
+                                    <option value="izin">Izin</option>
+                                    <option value="sakit">Sakit</option>
+                                    <option value="alfa">Alfa</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="bi bi-check-circle me-1"></i> Simpan Status
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 
-    <!-- Bootstrap 5 JS Bundle (dengan Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap 5 JS Bundle (dengan Popper) -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 
-    <!-- Script -->
-    <script>
-        const video = document.getElementById('camera');
-        const capturedInput = document.getElementById('captured');
+        <!-- Script -->
+        <script>
+            const video = document.getElementById('camera');
+            const capturedInput = document.getElementById('captured');
 
-        navigator.mediaDevices.getUserMedia({
-            video: true
-        }).then(stream => {
-            video.srcObject = stream;
-        });
+            navigator.mediaDevices.getUserMedia({
+                video: true
+            }).then(stream => {
+                video.srcObject = stream;
+            });
 
-        function captureAndSubmit() {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL('image/jpeg');
-            capturedInput.value = imageData;
-            document.querySelector('form').submit();
-        }
-    </script>
+            function captureAndSubmit() {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg');
+                capturedInput.value = imageData;
+                document.querySelector('form').submit();
+            }
+        </script>
 
-</body>
+    </body>
 
-</html>
+    </html>
