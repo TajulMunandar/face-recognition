@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
+use App\Models\Meeting;
 use App\Models\Subject;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 
 class AbsenController extends Controller
 {
@@ -66,12 +70,27 @@ class AbsenController extends Controller
         //
     }
 
+    public function downloadSubjectPdf($subjectId)
+    {
+        // Ambil subject beserta semua meeting dan attendance-nya
+        $subject = Subject::with(['meetings.attendances.user'])
+            ->findOrFail($subjectId);
+
+        // Buat PDF dari view
+        $pdf = Pdf::loadView('pdf', [
+            'subject' => $subject,
+        ]);
+        $filename = 'rekap_absensi_' . str_replace(' ', '_', strtolower($subject->name)) . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     public function updateStatus(Request $request)
     {
         $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
+            'meeting_id' => 'required|exists:meetings,id',
             'user_id' => 'required|exists:users,id',
-            'status' => 'required|in:izin,sakit,alfa',
+            'status' => 'required|in:hadir,izin,sakit,alfa',
         ]);
 
         $userId = $request->user_id; // ambil dari form
@@ -80,7 +99,7 @@ class AbsenController extends Controller
         $attendance = DB::table('attendances')
             ->where('user_id', $userId)
             ->whereDate('created_at', now()->toDateString())
-            ->where('subject_id', $request->subject_id)
+            ->where('meeting_id', $request->meeting_id)
             ->first();
 
         if ($attendance) {
@@ -93,7 +112,7 @@ class AbsenController extends Controller
             // insert baru
             DB::table('attendances')->insert([
                 'user_id' => $userId,
-                'subject_id' => $request->subject_id,
+                'meeting_id' => $request->meeting_id,
                 'status' => $request->status,
                 'created_at' => now(),
                 'updated_at' => now(),

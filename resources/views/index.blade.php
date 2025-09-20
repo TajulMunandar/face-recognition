@@ -85,9 +85,64 @@
                                 {{ \Carbon\Carbon::parse($subject->start_time)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($subject->end_time)->format('H:i') }}
                             </p>
-                            <a href="{{ url('/absen/' . $subject->id) }}" class="btn btn-success w-100">
-                                <i class="bi bi-person-check-fill me-1"></i> Absen Sekarang
-                            </a>
+                            <div class="row">
+                                <div class="col col-lg-10">
+                                    <button class="btn btn-success w-100" data-bs-toggle="modal"
+                                        data-bs-target="#meetingModal{{ $subject->id }}">
+                                        <i class="bi bi-person-check-fill me-1"></i> Absen Sekarang
+                                    </button>
+                                </div>
+                                <div class="col col-lg-2">
+                                    <a href="{{ route('attendance.subject.download', $subject->id) }}"
+                                        class="btn btn-danger w-100">
+                                        <i class="bi bi-download me-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="meetingModal{{ $subject->id }}" tabindex="-1"
+                    aria-labelledby="meetingModalLabel{{ $subject->id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable"> <!-- scrollable -->
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="meetingModalLabel{{ $subject->id }}">
+                                    Pilih Pertemuan - {{ $subject->name }}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul class="list-group">
+                                    @foreach ($subject->meetings as $meeting)
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Pertemuan {{ $meeting->pertemuan_ke }}
+                                            @php
+                                                $sudahAbsen = $meeting
+                                                    ->attendances()
+                                                    ->where('user_id', auth()->id())
+                                                    ->exists();
+                                            @endphp
+
+                                            @if ($sudahAbsen)
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="bi bi-check2-circle me-1"></i> Sudah Absen
+                                                </button>
+                                            @else
+                                                <a href="{{ route('absen.show', $meeting->id) }}"
+                                                    class="btn btn-sm btn-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Pilih
+                                                </a>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            </div>
                         </div>
                     </div>
                 </div>

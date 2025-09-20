@@ -10,17 +10,17 @@ class Attendance extends Model
     /** @use HasFactory<\Database\Factories\AttendaceFactory> */
     use HasFactory;
 
-    protected $guarded = [
-        'id',
-    ];
+    protected $guarded = ['id'];
 
-    public function subject()
-    {
-        return $this->belongsTo(Subject::class);
-    }
-
+    // Relasi ke user (siswa yang absen)
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // Relasi ke meeting (pertemuan tertentu)
+    public function meeting()
+    {
+        return $this->belongsTo(Meeting::class);
     }
 }

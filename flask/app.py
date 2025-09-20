@@ -68,13 +68,15 @@ def absen():
         if True in matches:
             match_index = matches.index(True)
             name = data["names"][match_index]
-            return jsonify(
-                {
-                    "message": f"Wajah dikenali sebagai {name}",
-                    "status": "Absen Berhasil",
-                    "waktu": datetime.now().isoformat(),
-                    "user_id": match_index + 1,  # kamu bisa ganti sesuai kebutuhan
-                }
+            return (
+                jsonify(
+                    {
+                        "message": f"Wajah dikenali sebagai {name}",
+                        "status": "Absen Berhasil",
+                        "waktu": datetime.now().isoformat(),  # kamu bisa ganti sesuai kebutuhan
+                    }
+                ),
+                200,
             )
 
     return jsonify({"message": "Wajah tidak dikenali", "status": "Gagal"}), 401

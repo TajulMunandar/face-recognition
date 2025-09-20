@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Meeting;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class FaceController extends Controller
 {
@@ -69,29 +72,42 @@ class FaceController extends Controller
     }
 
 
-    public function absenForm(Subject $subject)
+    public function absenForm(Meeting $meeting)
     {
-        $absensi = Attendance::where('subject_id', $subject->id)
+        $absensi = Attendance::where('meeting_id', $meeting->id)
             ->whereDate('created_at', today())
             ->with('user')
             ->get();
-        $subject = $subject->where('id', $subject->id)->first();
         $users = DB::table('users')->get(); // Fetch all users for the view
-        return view('absen')->with(compact('absensi', 'subject', 'users'));
+        return view('absen', [
+            'absensi' => $absensi,
+            'meeting' => $meeting,
+            'subject' => $meeting->subject,
+            'users' => $users,
+        ]);
     }
 
     public function absen(Request $request)
     {
         $request->validate([
             'captured' => 'required|string',
-            'subject' => 'required',
+            'meeting' => 'required',
         ]);
+
+        $meeting = Meeting::with('subject')->findOrFail($request->meeting);
+        $subject = $meeting->subject;
 
         // Decode base64 image
         $image = $request->captured;
         $image = str_replace('data:image/jpeg;base64,', '', $image);
         $image = str_replace(' ', '+', $image);
         $imageData = base64_decode($image);
+
+        if ($imageData === false) {
+            return back()
+                ->with('error', 'Gambar tidak valid. Silakan ambil ulang.')
+                ->with('error_detail', 'Base64 decode gagal');
+        }
 
         // Simpan file temporer
         $filename = uniqid() . '.jpg';
@@ -110,40 +126,49 @@ class FaceController extends Controller
         unlink($tempPath);
 
         if ($response->successful()) {
-            $result = $response->json();
-            $userId = $result['user_id'] ?? null;
+            $userId = Auth::id() ?? null;
+            if (!$userId) {
+                return back()
+                    ->with('error', 'Sesi login berakhir. Silakan login ulang.')
+                    ->with('error_detail', 'Auth::id() kosong');
+            }
 
             if ($userId) {
                 // Cek apakah sudah absen hari ini
                 $already = DB::table('attendances')
-                    ->whereDate('created_at', now()->toDateString())
+                    ->where('meeting_id', $meeting->id)
                     ->where('user_id', $userId)
-                    ->where('subject_id', $request->subject)
                     ->exists();
 
                 if (!$already) {
-                    $subject = Subject::find($request->subject);
-                    if ($subject) {
-                        $startTime = \Carbon\Carbon::parse($subject->start_time);
-                    } else {
-                        return back()->withErrors('Subject tidak ditemukan');
-                    }
+                    $startTime = \Carbon\Carbon::parse($subject->start_time);
                     $now = now();
-                    $status = $now->lessThanOrEqualTo($startTime) ? 'hadir' : 'terlambat';
+                    $status = $now->lessThanOrEqualTo($startTime) ? 'pending' : 'terlambat';
+
+                    // simpan foto hasil capture
+                    $photoName = uniqid() . '.jpg';
+                    $photoPath = 'attendances/' . $photoName;
+                    Storage::disk('public')->put($photoPath, $imageData);
+
                     DB::table('attendances')->insert([
-                        'user_id' => $userId,
-                        'absen_at' => now(),
-                        'subject_id' => $subject->id,
+                        'user_id'    => $userId,
+                        'meeting_id' => $meeting->id,
+                        'absen_at'   => now(),
                         'status'     => $status,
+                        'photo'      => $photoPath,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
-
                 return redirect()->back()->with('success', 'Absensi berhasil!');
             } else {
                 return redirect()->back()->with('error', 'Wajah tidak dikenali!');
             }
+        }
+        
+        if ($response->status() === 401) {
+            $result = $response->json();
+            return back()->with('error', $result['message'] ?? 'Wajah tidak dikenali');
         }
 
         return redirect()->back()->with('error', 'Wajah tidak dikenali!');

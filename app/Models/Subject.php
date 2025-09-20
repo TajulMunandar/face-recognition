@@ -10,9 +10,9 @@ class Subject extends Model
     /** @use HasFactory<\Database\Factories\SubjectFactory> */
     use HasFactory;
 
-    public function attendances()
+    public function meetings()
     {
-        return $this->hasMany(Attendance::class);
+        return $this->hasMany(Meeting::class);
     }
 
     protected $guarded = [

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onUpdate('cascade')->onDelete('restrict');
             $table->timestamp('absen_at')->nullable(); // Tambahkan jika ingin waktu absen
             $table->string('status')->default('hadir'); // hadir, terlambat, izin, sakit, alfa
-            $table->unsignedBigInteger('subject_id')->nullable(); // mata pelajaran
-            $table->foreign('subject_id')->references('id')->on('subjects')->onDelete('set null');
+            $table->foreignId('meeting_id')->constrained('meetings')->onDelete('cascade');
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

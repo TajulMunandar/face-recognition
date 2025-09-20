@@ -83,6 +83,9 @@
                 @if (session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
+                @if (session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
 
                 <div class="table-responsive">
                     <table class="table table-striped align-middle">
@@ -201,6 +204,11 @@
                         <div class="mb-3">
                             <label for="name" class="form-label">Nama Mata Pelajaran</label>
                             <input type="text" class="form-control" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sks" class="form-label">Jumlah SKS</label>
+                            <input type="number" class="form-control" name="sks" min="1" required>
                         </div>
 
                         <div class="mb-3">

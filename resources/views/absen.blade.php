@@ -121,6 +121,7 @@
                         <th scope="col">Nama</th>
                         <th scope="col">Waktu Absen</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Photo</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -150,6 +151,10 @@
                                         <span class="badge bg-info text-dark">Izin</span>
                                     @break
 
+                                    @case('pending')
+                                        <span class="badge bg-info text-dark">Pending</span>
+                                    @break
+
                                     @case('sakit')
                                         <span class="badge bg-primary">Sakit</span>
                                     @break
@@ -158,6 +163,10 @@
                                         <span class="badge bg-danger">Alfa</span>
                                     @break
                                 @endswitch
+                            </td>
+                            <td>
+                                <img src="{{ asset('storage/' . $a->photo) }}" alt="Photo" class="img-fluid rounded"
+                                    style="max-width: 100px;">
                             </td>
                         </tr>
                         @empty
@@ -183,10 +192,10 @@
                     <div class="modal-body text-center">
                         <video id="camera" class="rounded shadow-sm border" autoplay playsinline
                             style="width: 100%; max-height: 400px;"></video>
-                        <form action="/absen" method="POST" class="mt-3">
+                        <form id="absenForm" action="/absen" method="POST" class="mt-3">
                             @csrf
                             <input type="hidden" name="captured" id="captured">
-                            <input type="hidden" name="subject" value="{{ $subject->id }}">
+                            <input type="hidden" name="meeting" value="{{ $meeting->id }}">
                             <button type="button" class="btn btn-primary w-100" onclick="captureAndSubmit()">
                                 <i class="bi bi-check-circle-fill me-1"></i>Konfirmasi Absen
                             </button>
@@ -208,7 +217,7 @@
                     <div class="modal-body">
                         <form action="{{ route('absen.updateStatus') }}" method="POST">
                             @csrf
-                            <input type="hidden" name="subject_id" value="{{ $subject->id }}">
+                            <input type="hidden" name="meeting_id" value="{{ $meeting->id }}">
 
                             <div class="mb-3">
                                 <label for="user_id" class="form-label">Pilih Siswa</label>
@@ -224,6 +233,7 @@
                                 <label for="status" class="form-label">Pilih Status</label>
                                 <select name="status" class="form-select" required>
                                     <option value="">-- Pilih Status --</option>
+                                    <option value="hadir">Hadir</option>
                                     <option value="izin">Izin</option>
                                     <option value="sakit">Sakit</option>
                                     <option value="alfa">Alfa</option>
@@ -238,8 +248,6 @@
                 </div>
             </div>
         </div>
-
-
 
         <!-- Bootstrap 5 JS Bundle (dengan Popper) -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -263,7 +271,7 @@
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                 const imageData = canvas.toDataURL('image/jpeg');
                 capturedInput.value = imageData;
-                document.querySelector('form').submit();
+                document.getElementById('absenForm').submit();
             }
         </script>
 

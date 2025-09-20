@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Meeting;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SubjectController extends Controller
 {
@@ -33,10 +35,31 @@ class SubjectController extends Controller
             'name' => 'required|string|max:255',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
+            'sks' => 'required|integer|min:1',
         ]);
 
-        Subject::create($request->all());
-        return redirect()->route('subjects.index')->with('success', 'Subject berhasil ditambahkan');
+        try {
+            DB::beginTransaction();
+
+            $subject = Subject::create($request->only(['name', 'start_time', 'end_time', 'sks']));
+
+            $jumlahPertemuan = $request->sks * 16;
+
+            for ($i = 1; $i <= $jumlahPertemuan; $i++) {
+                Meeting::create([
+                    'subject_id' => $subject->id,
+                    'pertemuan_ke' => $i,
+                    'tanggal' => now()->addWeeks($i - 1), // contoh auto-generate tanggal tiap minggu
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('subjects.index')->with('success', 'Subject berhasil ditambahkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('subjects.index')->with('error', 'Gagal menambahkan subject: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -75,6 +98,9 @@ class SubjectController extends Controller
      */
     public function destroy(Subject $subject)
     {
+        $subject->meetings()->delete();
+
+        // baru hapus subject
         $subject->delete();
         return redirect()->route('subjects.index')->with('success', 'Subject berhasil dihapus');
     }

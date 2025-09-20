@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('subjects', function (Blueprint $table) {
+        Schema::create('meetings', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->time('start_time'); // jam mulai pelajaran
-            $table->time('end_time');   // jam selesai pelajaran
-             $table->integer('sks')->default(1);   // jam selesai pelajaran
+            $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
+            $table->integer('pertemuan_ke'); // 1 - 16
             $table->timestamps();
         });
     }
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('subjects');
+        Schema::dropIfExists('meetings');
     }
 };
